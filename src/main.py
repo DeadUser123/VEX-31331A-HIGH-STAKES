@@ -14,6 +14,12 @@ right_motor1 = Motor(Ports.PORT4, GearSetting.RATIO_18_1, False) # right top
 right_motor2 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, True)
 right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
+getLeftEncoderValue = left_motor3.position
+getRightEncoderValue = right_motor3.position
+
+position_x, position_y, theta = 0, 0, 0
+kP, kI, kD = 0, 0, 0
+
 intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
 # VISION
@@ -35,10 +41,8 @@ intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
 
 # Functions
-def set_motor_velocities():
-    left_speed = controller.axis3.position() - controller.axis1.position()
-    right_speed = controller.axis3.position() + controller.axis1.position()
-    
+
+def set_motor_velocities(left_speed, right_speed):
     left_motor1.set_velocity(left_speed, PERCENT)
     left_motor2.set_velocity(left_speed, PERCENT)
     left_motor3.set_velocity(left_speed, PERCENT)
@@ -53,15 +57,32 @@ def spin_motors():
     right_motor1.spin(FORWARD)
     right_motor2.spin(FORWARD)
     right_motor3.spin(FORWARD)
+    
+def movePI(distance): # forward is positive, distance in inches because vex is stupid like that
+    startingPosition = getLeftEncoderValue(INCHES)
+    while (abs((startingPosition + distance) - getLeftEncoderValue(INCHES)) > 0.1):
+        kP = (getLeftEncoderValue(INCHES) - (startingPosition + distance)) / (startingPosition + distance) * 100
+        kP = 0 if abs(kP) < 1 else kP
+        kI = 0
+        kD = 0
+        set_motor_velocities(kP + kI + kD, kP + kI + kD)
+        spin_motors()
+        wait(5, MSEC)
+
+def rotate(degrees):
+    pass
+
+def autonomous():
+    pass
 
 # MAIN LOOP to set motors to controller axis positions
 while True:
-    set_motor_velocities()
+    set_motor_velocities(controller.axis3.position() - controller.axis1.position(), controller.axis3.position() + controller.axis1.position())
     spin_motors()
     
-    if (controller.buttonA.pressing()): # one direction
+    if (controller.buttonR2.pressing()): # one direction
         intake_motor.set_velocity(100, PERCENT)
-    elif (controller.buttonB.pressing()): # the other
+    elif (controller.buttonL2.pressing()): # the other
         intake_motor.set_velocity(-100, PERCENT)
     else:
         intake_motor.set_velocity(0, PERCENT)
