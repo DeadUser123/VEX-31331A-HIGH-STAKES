@@ -14,7 +14,7 @@ right_motor1 = Motor(Ports.PORT4, GearSetting.RATIO_18_1, False) # right top
 right_motor2 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, True)
 right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
-intake_motor = Motor(Ports.PORT7, GearSetting.RATIO_18_1, True)
+intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
 # VISION
 # visionSensor = Vision(Ports.PORT1)
