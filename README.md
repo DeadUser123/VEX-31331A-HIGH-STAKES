@@ -1,1 +1,1 @@
-The code for VEX team 31331A
+The code for VRC team 31331A
