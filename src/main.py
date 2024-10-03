@@ -66,6 +66,15 @@ def set_motor_velocities(left_speed, right_speed):
     right_motor2.set_velocity(right_speed, PERCENT)
     right_motor3.set_velocity(right_speed, PERCENT)
     spin_motors()
+    
+def run_intake(forward: bool, reverse: bool):
+    if (forward): # one direction
+        intake_motor.set_velocity(100, PERCENT)
+    elif (reverse): # the other
+        intake_motor.set_velocity(-100, PERCENT)
+    else:
+        intake_motor.set_velocity(0, PERCENT)
+    intake_motor.spin(FORWARD)
 
 def movePI(distance: float):  # forward is positive, distance in inches
     global integral  # Use the global integral variable
@@ -129,14 +138,7 @@ def autonomous():
 while True:
     set_motor_velocities(controller.axis3.position() - controller.axis1.position(), controller.axis3.position() + controller.axis1.position())
     
-    # INTAKE
-    if (controller.buttonR2.pressing()): # one direction
-        intake_motor.set_velocity(100, PERCENT)
-    elif (controller.buttonL2.pressing()): # the other
-        intake_motor.set_velocity(-100, PERCENT)
-    else:
-        intake_motor.set_velocity(0, PERCENT)
-    intake_motor.spin(FORWARD)
+    run_intake(controller.buttonR2.pressing(), controller.buttonL2.pressing())
     
     # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK
     # object = visionSensor.largest_object()
