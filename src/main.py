@@ -15,10 +15,12 @@ right_motor1 = Motor(Ports.PORT4, GearSetting.RATIO_18_1, False) # right top
 right_motor2 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, True)
 right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
-getLeftEncoderValue = left_motor3.position
-getRightEncoderValue = right_motor3.position
+getLeftEncoderValue = lambda : left_motor3.position(INCHES) # because je suis too lazy to type left_motor3 15 times
+getRightEncoderValue = lambda : right_motor3.position(INCHES)
 
-turning_distance = 2 * 10 * math.pi # in inches
+motor_distance_from_center = 10
+
+turning_distance = 2 * motor_distance_from_center * math.pi # in inches
 
 position_x, position_y, theta = 0, 0, 0
 
@@ -55,6 +57,8 @@ def spin_motors():
     right_motor3.spin(FORWARD)
 
 def set_motor_velocities(left_speed, right_speed):
+    # INSERT POSITION TRACKING CODE
+    
     left_motor1.set_velocity(left_speed, PERCENT)
     left_motor2.set_velocity(left_speed, PERCENT)
     left_motor3.set_velocity(left_speed, PERCENT)
@@ -65,12 +69,13 @@ def set_motor_velocities(left_speed, right_speed):
 
 def movePI(distance: float):  # forward is positive, distance in inches
     global integral  # Use the global integral variable
-    startingPosition = getLeftEncoderValue(INCHES)
+    global position_x, position_y
+    startingPosition = getLeftEncoderValue()
     targetPosition = startingPosition + distance
     integral = 0  # Reset the integral term at the start of the movement
 
-    while (abs(targetPosition - getLeftEncoderValue(INCHES)) > 0.1):
-        currentPosition = getLeftEncoderValue(INCHES)
+    while (abs(targetPosition - getLeftEncoderValue()) > 0.1):
+        currentPosition = getLeftEncoderValue()
         error = targetPosition - currentPosition
 
         # Proportional term
@@ -79,6 +84,9 @@ def movePI(distance: float):  # forward is positive, distance in inches
         # Integral term
         integral += error  # Accumulate error
         kI = Ki * integral
+        
+        # Derivative Term
+        # NOT IMPLEMENTED
 
         # Calculate motor speeds
         left_speed = kP + kI
@@ -93,20 +101,29 @@ def movePI(distance: float):  # forward is positive, distance in inches
 def rotate(degrees: float): # right is positive
     degrees %= 360 # prevent the robot from rotating 15000 times
     if degrees <= 180: # if faster to turn right
-        left_target = getLeftEncoderValue(INCHES) + degrees / 360 * turning_distance
-        right_target = getRightEncoderValue(INCHES) - degrees / 360 * turning_distance
+        left_target = getLeftEncoderValue() + degrees / 360 * turning_distance
+        right_target = getRightEncoderValue() - degrees / 360 * turning_distance
     else: # if faster to turn left
-        left_target = getLeftEncoderValue(INCHES) - degrees / 360 * turning_distance
-        right_target = getRightEncoderValue(INCHES) + degrees / 360 * turning_distance
+        left_target = getLeftEncoderValue() - degrees / 360 * turning_distance
+        right_target = getRightEncoderValue() + degrees / 360 * turning_distance
         
     # INSERT PID CONTROL CODE HERE
+    while (abs(left_target - getLeftEncoderValue()) > 0.01 and abs(right_target - getRightEncoderValue()) > 0.01): # more precision required
+        error = ((left_target - getLeftEncoderValue()) + (right_target - getRightEncoderValue())) / 2
+        left_speed = 0
+        right_speed = 0
+        set_motor_velocities(left_speed, right_speed)
+    set_motor_velocities(0, 0)
     
 def goTo(x: float, y: float):
-    pass
+    required_theta = math.degrees(math.atan((y - position_y) / (x - position_x)))
+    degrees_to_turn = theta - required_theta if theta - required_theta >= 0 else 360 + theta - required_theta
+    rotate(degrees_to_turn)
+    movePI(math.sqrt((y - position_y) ** 2 + (x - position_x) ** 2))
 
 # put all autonomous code here:
 def autonomous():
-    pass
+    movePI(10)
 
 # MAIN LOOP to set motors to controller axis positions
 while True:
