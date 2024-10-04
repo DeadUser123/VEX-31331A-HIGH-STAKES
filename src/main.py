@@ -15,12 +15,14 @@ right_motor1 = Motor(Ports.PORT4, GearSetting.RATIO_18_1, False) # right top
 right_motor2 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, True)
 right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
-getLeftEncoderValue = lambda : left_motor3.position(INCHES) # because je suis too lazy to type left_motor3 15 times
-getRightEncoderValue = lambda : right_motor3.position(INCHES)
+WHEEL_DIAMETER = 4
 
-motor_distance_from_center = 10
+getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_DIAMETER * math.pi # because je suis too lazy to type left_motor3 15 times
+getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_DIAMETER * math.pi
 
-turning_distance = 2 * motor_distance_from_center * math.pi # in inches
+MOTOR_DISTANCE_FROM_CENTER = 10
+
+TURNING_DISTANCE = 2 * MOTOR_DISTANCE_FROM_CENTER * math.pi # in inches
 
 position_x, position_y, theta = 0, 0, 0
 
@@ -56,7 +58,8 @@ def spin_motors():
     right_motor2.spin(FORWARD)
     right_motor3.spin(FORWARD)
 
-def set_motor_velocities(left_speed, right_speed):
+def set_motor_velocities(left_speed: float, right_speed: float):
+    global position_x, position_y, theta
     # INSERT POSITION TRACKING CODE
     
     left_motor1.set_velocity(left_speed, PERCENT)
@@ -110,18 +113,17 @@ def movePI(distance: float):  # forward is positive, distance in inches
 def rotate(degrees: float): # right is positive
     degrees %= 360 # prevent the robot from rotating 15000 times
     if degrees <= 180: # if faster to turn right
-        left_target = getLeftEncoderValue() + degrees / 360 * turning_distance
-        right_target = getRightEncoderValue() - degrees / 360 * turning_distance
+        left_target = getLeftEncoderValue() + degrees / 360 * TURNING_DISTANCE
+        right_target = getRightEncoderValue() - degrees / 360 * TURNING_DISTANCE
     else: # if faster to turn left
-        left_target = getLeftEncoderValue() - degrees / 360 * turning_distance
-        right_target = getRightEncoderValue() + degrees / 360 * turning_distance
+        left_target = getLeftEncoderValue() - degrees / 360 * TURNING_DISTANCE
+        right_target = getRightEncoderValue() + degrees / 360 * TURNING_DISTANCE
         
     # INSERT PID CONTROL CODE HERE
     while (abs(left_target - getLeftEncoderValue()) > 0.01 and abs(right_target - getRightEncoderValue()) > 0.01): # more precision required
         error = ((left_target - getLeftEncoderValue()) + (right_target - getRightEncoderValue())) / 2
-        left_speed = 0
-        right_speed = 0
-        set_motor_velocities(left_speed, right_speed)
+        rotate_speed = 0
+        set_motor_velocities(rotate_speed, -rotate_speed)
     set_motor_velocities(0, 0)
     
 def goTo(x: float, y: float):
