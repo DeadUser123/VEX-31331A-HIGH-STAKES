@@ -15,6 +15,10 @@ right_motor1 = Motor(Ports.PORT4, GearSetting.RATIO_18_1, False) # right top
 right_motor2 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, True)
 right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
+intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
+
+backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
+
 WHEEL_DIAMETER = 4
 
 getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_DIAMETER * math.pi # because je suis too lazy to type left_motor3 15 times
@@ -26,10 +30,10 @@ TURNING_DISTANCE = 2 * MOTOR_DISTANCE_FROM_CENTER * math.pi # in inches
 
 position_x, position_y, theta = 0, 0, 0
 
+pneumatic_calibration_array = lambda : [[[[[[0] * 31] * 31] * 31] * 31] * 31] * 31
+
 # PID CONSTANT TERMS
 Kp, Ki, Kd = 1.0, 0.1, 0
-
-intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
 # VISION
 # visionSensor = Vision(Ports.PORT10)
@@ -142,7 +146,7 @@ while True:
     
     run_intake(controller.buttonR2.pressing(), controller.buttonL2.pressing())
     
-    # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK
+    # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK, mayhaps steal from the internet
     # object = visionSensor.largest_object()
     # if object.height > 50 and object.id == 1: # 1 - Red ring, 2 - Blue (0 - mobile goal)
     #     pass # do something if object is large enough
