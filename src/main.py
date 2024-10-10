@@ -28,7 +28,7 @@ backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
 left_motor3.reset_position()
 right_motor3.reset_position()
 
-getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE # because je suis too lazy to type left_motor3 15 times
+getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE # because I'm lazy
 getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE
 
 # POSITION TRACKING
@@ -65,6 +65,14 @@ def spin_motors():
     right_motor1.spin(FORWARD)
     right_motor2.spin(FORWARD)
     right_motor3.spin(FORWARD)
+    
+def brake_motors():
+    left_motor1.stop(BRAKE)
+    left_motor2.stop(BRAKE)
+    left_motor3.stop(BRAKE)
+    right_motor1.stop(BRAKE)
+    right_motor2.stop(BRAKE)
+    right_motor3.stop(BRAKE)
 
 def set_motor_velocities(left_speed: float, right_speed: float):
     global position_x, position_y, theta
@@ -73,7 +81,7 @@ def set_motor_velocities(left_speed: float, right_speed: float):
     position_y += math.sin(theta * math.pi / 180) * (left_speed + right_speed) / 200 * MAX_MOTORS_DEGREES_PER_5_MS / 360 * WHEEL_CIRCUMFERENCE
     
     # THETA TRACKING
-    if (left_speed == -right_speed):
+    if (left_speed == -right_speed): # position tracking won't be used during out of autonomous so not necessary to account for both moving and spinning
         theta += ((left_speed / 100 * MAX_MOTORS_DEGREES_PER_5_MS) * WHEEL_CIRCUMFERENCE) / TURNING_DISTANCE * 360
         theta %= 360
     
@@ -83,7 +91,11 @@ def set_motor_velocities(left_speed: float, right_speed: float):
     right_motor1.set_velocity(right_speed, PERCENT)
     right_motor2.set_velocity(right_speed, PERCENT)
     right_motor3.set_velocity(right_speed, PERCENT)
-    spin_motors()
+    
+    if left_speed == 0 and right_speed == 0:
+        brake_motors()
+    else:
+        spin_motors()
     
 def run_intake(forward: bool, reverse: bool):
     if (forward): # one direction
@@ -97,9 +109,12 @@ def run_intake(forward: bool, reverse: bool):
 def movePI(distance: float):  # forward is positive, distance in inches
     global integral  # Use the global integral variable
     global position_x, position_y
+    
     startingPosition = getLeftEncoderValue()
     targetPosition = startingPosition + distance
     integral = 0  # Reset the integral term at the start of the movement
+    
+    previous_error = targetPosition - startingPosition
 
     while (abs(targetPosition - getLeftEncoderValue()) > 0.1):
         currentPosition = getLeftEncoderValue()
@@ -113,17 +128,19 @@ def movePI(distance: float):  # forward is positive, distance in inches
         kI = Ki * integral
         
         # Derivative Term
-        # NOT IMPLEMENTED
+        kD = Kd * (error - previous_error) / 0.005 # change in erorr divided by change in time
 
         # Calculate motor speeds
-        left_speed = kP + kI
-        right_speed = kP + kI
+        left_speed = kP + kI + kD
+        right_speed = kP + kI + kD
 
         set_motor_velocities(left_speed, right_speed)
+        
+        previous_error = error
         wait(5, MSEC)
 
     # Stop motors after reaching the target position
-    set_motor_velocities(0, 0)
+    brake_motors()
 
 def rotate(degrees: float): # right is positive
     degrees %= 360 # prevent the robot from rotating 15000 times
@@ -134,11 +151,22 @@ def rotate(degrees: float): # right is positive
         left_target = getLeftEncoderValue() - degrees / 360 * TURNING_DISTANCE
         right_target = getRightEncoderValue() + degrees / 360 * TURNING_DISTANCE
         
-    # INSERT PID CONTROL CODE HERE
+    left_integral = 0
+    right_integral = 0
     while (abs(left_target - getLeftEncoderValue()) > 0.01 and abs(right_target - getRightEncoderValue()) > 0.01): # more precision required
-        error = ((left_target - getLeftEncoderValue()) + (right_target - getRightEncoderValue())) / 2
-        rotate_speed = 0
-        set_motor_velocities(rotate_speed, -rotate_speed)
+        left_error = left_target - getLeftEncoderValue()
+        right_error = right_target - getRightEncoderValue()
+        
+        left_kP = Kp * left_error
+        right_kP = Kp * right_error
+        
+        left_integral += left_error
+        right_integral += right_error
+        
+        left_kI = Ki * left_integral
+        right_kI = Ki * right_integral
+        
+        set_motor_velocities(left_kP + left_kI, right_kP + right_kI)
         wait(5, MSEC)
     set_motor_velocities(0, 0)
     
