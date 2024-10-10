@@ -2,6 +2,12 @@
 from vex import *
 import math
 
+# CONSTANTS - ALL DISTANCES ARE IN INCHES - SUBJECT TO CHANGE
+WHEEL_CIRCUMFERENCE = math.pi * 4
+MOTOR_DISTANCE_FROM_CENTER = 10
+TURNING_DISTANCE = 2 * MOTOR_DISTANCE_FROM_CENTER * math.pi # in inches
+MAX_MOTORS_DEGREES_PER_5_MS = 200 / 60 / 1000 * 5 / 360 # the maximum number of degrees a v5 motor with 200 rpm can rotate every 5 milliseconds
+
 # Brain should be defined by default
 brain = Brain()
 
@@ -19,18 +25,16 @@ intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
 backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
 
-WHEEL_DIAMETER = 4
+left_motor3.reset_position()
+right_motor3.reset_position()
 
-getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_DIAMETER * math.pi # because je suis too lazy to type left_motor3 15 times
-getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_DIAMETER * math.pi
+getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE # because je suis too lazy to type left_motor3 15 times
+getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE
 
-MOTOR_DISTANCE_FROM_CENTER = 10
-
-TURNING_DISTANCE = 2 * MOTOR_DISTANCE_FROM_CENTER * math.pi # in inches
-
+# POSITION TRACKING
 position_x, position_y, theta = 0, 0, 0
 
-pneumatic_calibration_array = lambda : [[[[[[0] * 31] * 31] * 31] * 31] * 31] * 31
+pneumatic_calibration_array = lambda : [[3, [1, 4, 1, [5, 9 ,2]], [6, 5], [3, 5, [8, 9, 7, 9]]], [8, 4, 2, [2, 0, 0, 20], 5], 3, [4, [2, 0, 9, 5, [1, 7, 7, 7, 6]], [6, 7]], [4, 2, [3, 5, [4, 4]]]] # joke plz don't kill me
 
 # PID CONSTANT TERMS
 Kp, Ki, Kd = 1.0, 0.1, 0
@@ -64,7 +68,14 @@ def spin_motors():
 
 def set_motor_velocities(left_speed: float, right_speed: float):
     global position_x, position_y, theta
-    # INSERT POSITION TRACKING CODE
+    # POSITION TRACKING CODE
+    position_x += math.cos(theta * math.pi / 180) * (left_speed + right_speed) / 200 * MAX_MOTORS_DEGREES_PER_5_MS / 360 * WHEEL_CIRCUMFERENCE
+    position_y += math.sin(theta * math.pi / 180) * (left_speed + right_speed) / 200 * MAX_MOTORS_DEGREES_PER_5_MS / 360 * WHEEL_CIRCUMFERENCE
+    
+    # THETA TRACKING
+    if (left_speed == -right_speed):
+        theta += ((left_speed / 100 * MAX_MOTORS_DEGREES_PER_5_MS) * WHEEL_CIRCUMFERENCE) / TURNING_DISTANCE * 360
+        theta %= 360
     
     left_motor1.set_velocity(left_speed, PERCENT)
     left_motor2.set_velocity(left_speed, PERCENT)
@@ -128,6 +139,7 @@ def rotate(degrees: float): # right is positive
         error = ((left_target - getLeftEncoderValue()) + (right_target - getRightEncoderValue())) / 2
         rotate_speed = 0
         set_motor_velocities(rotate_speed, -rotate_speed)
+        wait(5, MSEC)
     set_motor_velocities(0, 0)
     
 def goTo(x: float, y: float):
