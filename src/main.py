@@ -23,8 +23,9 @@ right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
 intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
-backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
+clamp_piston = Pneumatics(brain.three_wire_port.a)
 
+backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
 left_motor3.reset_position()
 right_motor3.reset_position()
 
@@ -33,8 +34,6 @@ getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIR
 
 # POSITION TRACKING
 position_x, position_y, theta = 0, 0, 0
-
-pneumatic_calibration_array = lambda : [[3, [1, 4, 1, [5, 9 ,2]], [6, 5], [3, 5, [8, 9, 7, 9]]], [8, 4, 2, [2, 0, 0, 20], 5], 3, [4, [2, 0, 9, 5, [1, 7, 7, 7, 6]], [6, 7]], [4, 2, [3, 5, [4, 4]]]] # joke plz don't kill me
 
 # PID CONSTANT TERMS
 Kp, Ki, Kd = 1.0, 0.1, 0
@@ -106,7 +105,7 @@ def run_intake(forward: bool, reverse: bool):
         intake_motor.set_velocity(0, PERCENT)
     intake_motor.spin(FORWARD)
 
-def movePI(distance: float):  # forward is positive, distance in inches
+def move(distance: float):  # forward is positive, distance in inches
     global integral  # Use the global integral variable
     global position_x, position_y
     
@@ -174,20 +173,31 @@ def goTo(x: float, y: float):
     required_theta = math.degrees(math.atan((y - position_y) / (x - position_x)))
     degrees_to_turn = theta - required_theta if theta - required_theta >= 0 else 360 + theta - required_theta
     rotate(degrees_to_turn)
-    movePI(math.sqrt((y - position_y) ** 2 + (x - position_x) ** 2))
+    move(math.sqrt((y - position_y) ** 2 + (x - position_x) ** 2))
 
 # put all autonomous code here:
 def autonomous():
-    movePI(10)
+    move(10)
 
-# MAIN LOOP to set motors to controller axis positions
-while True:
-    set_motor_velocities(controller.axis3.position() - controller.axis1.position(), controller.axis3.position() + controller.axis1.position())
+# driver control period
+def drive_task():
+    while True:
+        set_motor_velocities(controller.axis3.position() - controller.axis1.position(), controller.axis3.position() + controller.axis1.position())
     
-    run_intake(controller.buttonR2.pressing(), controller.buttonL2.pressing())
+        run_intake(controller.buttonR2.pressing(), controller.buttonL2.pressing())
+        
+        if (controller.buttonR1.pressing()):
+            if (clamp_piston.value() == 0):
+                clamp_piston.open()
+            else:
+                clamp_piston.close()
     
-    # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK, mayhaps steal from the internet
-    # object = visionSensor.largest_object()
-    # if object.height > 50 and object.id == 1: # 1 - Red ring, 2 - Blue (0 - mobile goal)
-    #     pass # do something if object is large enough
-    wait(5, MSEC)
+        # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK, mayhaps steal from the internet
+        # object = visionSensor.largest_object()
+        # if object.height > 50 and object.id == 1: # 1 - Red ring, 2 - Blue (0 - mobile goal)
+        #     pass # do something if object is large enough
+        wait(5, MSEC)
+
+competition_control = Competition(drive_task, autonomous)
+
+drive_task()
