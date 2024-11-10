@@ -23,7 +23,7 @@ right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
 intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
-clamp_piston = Pneumatics(brain.three_wire_port.a)
+clamp = Pneumatics(brain.three_wire_port.a)
 
 backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
 left_motor3.reset_position()
@@ -181,16 +181,12 @@ def autonomous():
 
 # driver control period
 def drive_task():
+    controller.buttonR1.pressed(clamp.open if (clamp.value() == 1) else clamp.close)
+    
     while True:
         set_motor_velocities(controller.axis3.position() - controller.axis1.position(), controller.axis3.position() + controller.axis1.position())
     
         run_intake(controller.buttonR2.pressing(), controller.buttonL2.pressing())
-        
-        if (controller.buttonR1.pressing()):
-            if (clamp_piston.value() == 0):
-                clamp_piston.open()
-            else:
-                clamp_piston.close()
     
         # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK, mayhaps steal from the internet
         # object = visionSensor.largest_object()
