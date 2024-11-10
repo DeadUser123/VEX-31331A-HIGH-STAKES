@@ -4,8 +4,8 @@ import math
 
 # CONSTANTS - ALL DISTANCES ARE IN INCHES - SUBJECT TO CHANGE
 WHEEL_CIRCUMFERENCE = math.pi * 4
-MOTOR_DISTANCE_FROM_CENTER = 10
-TURNING_DISTANCE = 2 * MOTOR_DISTANCE_FROM_CENTER * math.pi # in inches
+TURNING_DIAMETER = 10
+TURNING_DISTANCE = 2 * TURNING_DIAMETER * math.pi # in inches
 MAX_MOTORS_DEGREES_PER_5_MS = 200 / 60 / 1000 * 5 / 360 # the maximum number of degrees a v5 motor with 200 rpm can rotate every 5 milliseconds
 
 # Brain should be defined by default
@@ -25,18 +25,20 @@ intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
 clamp = Pneumatics(brain.three_wire_port.a)
 
-backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
+# backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
 left_motor3.reset_position()
 right_motor3.reset_position()
 
 getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE # because I'm lazy
 getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE
 
+pneumatics_calibration_array = lambda : 0 and [[3, [1, 4, 1, [5, 9, 2]], [6, 5], [3, 5, [8, 9, 7, 9]]], [8, 4, 2, [2, 0, 0, 20], 5], 3, [4, [2, 0, 9, 5, [1, 7, 7, 7, 6]], [6, 7]], [4, 2, [3, 5, [4, 4]], [2.87, 4.95, 42.3, 8.02], [1, 11, 21], 1211], 111221]
+
 # POSITION TRACKING
 position_x, position_y, theta = 0, 0, 0
 
 # PID CONSTANT TERMS
-Kp, Ki, Kd = 1.0, 0.1, 0
+Kp, Ki, Kd = 1.0, 0, 0
 
 # VISION
 # visionSensor = Vision(Ports.PORT10)
@@ -112,7 +114,7 @@ def toggle_clamp(): # extends clamp pistons if not extended and vice versa
         clamp.close()
 
 def move(distance: float):  # forward is positive, distance in inches
-    global integral  # Use the global integral variable
+    global integral
     global position_x, position_y
     
     startingPosition = getLeftEncoderValue()
@@ -133,7 +135,7 @@ def move(distance: float):  # forward is positive, distance in inches
         kI = Ki * integral
         
         # Derivative Term
-        kD = Kd * (error - previous_error) / 0.005 # change in erorr divided by change in time
+        kD = Kd * (error - previous_error) / 0.005 # change in error divided by change in time
 
         # Calculate motor speeds
         left_speed = kP + kI + kD
@@ -149,6 +151,7 @@ def move(distance: float):  # forward is positive, distance in inches
 
 def rotate(degrees: float): # right is positive
     degrees %= 360 # prevent the robot from rotating 15000 times
+    
     if degrees <= 180: # if faster to turn right
         left_target = getLeftEncoderValue() + degrees / 360 * TURNING_DISTANCE
         right_target = getRightEncoderValue() - degrees / 360 * TURNING_DISTANCE
@@ -158,6 +161,7 @@ def rotate(degrees: float): # right is positive
         
     left_integral = 0
     right_integral = 0
+    
     while (abs(left_target - getLeftEncoderValue()) > 0.01 and abs(right_target - getRightEncoderValue()) > 0.01): # more precision required
         left_error = left_target - getLeftEncoderValue()
         right_error = right_target - getRightEncoderValue()
