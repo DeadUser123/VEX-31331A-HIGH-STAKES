@@ -105,6 +105,12 @@ def run_intake(forward: bool, reverse: bool):
         intake_motor.set_velocity(0, PERCENT)
     intake_motor.spin(FORWARD)
 
+def toggle_clamp(): # extends clamp pistons if not extended and vice versa
+    if clamp.value() == 0:
+        clamp.open()
+    else:
+        clamp.close()
+
 def move(distance: float):  # forward is positive, distance in inches
     global integral  # Use the global integral variable
     global position_x, position_y
@@ -181,7 +187,7 @@ def autonomous():
 
 # driver control period
 def drive_task():
-    controller.buttonR1.pressed(clamp.open if (clamp.value() == 1) else clamp.close)
+    controller.buttonR1.pressed(toggle_clamp)
     
     while True:
         set_motor_velocities(controller.axis3.position() - controller.axis1.position(), controller.axis3.position() + controller.axis1.position())
