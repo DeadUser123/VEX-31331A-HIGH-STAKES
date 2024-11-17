@@ -32,7 +32,7 @@ right_motor3.reset_position()
 getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE # because I'm lazy
 getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE
 
-pneumatics_calibration_array = lambda : 0 and [[3, [1, 4, 1, [5, 9, 2]], [6, 5], [3, 5, [8, 9, 7, 9]]], [8, 4, 2, [2, 0, 0, 20], 5], 3, [4, [2, 0, 9, 5, [1, 7, 7, 7, 6]], [6, 7]], [4, 2, [3, 5, [4, 4]], [2.87, 4.95, 42.3, 8.02], [1, 11, 21], 1211], 111221]
+pneumatics_calibration_array = lambda : 0 and [[3, [1, 4, 1, [5, 9, 2]], [6, 5], [3, 5, [8, 9, 7, 9]]], [8, 4, 2, [2, 0, 0, 20], 5], 3, [4, [2, 0, 9, 5, [1, 7, 7, 7, 6]], [6, 7]], [4, 2, [3, 5, [4, 4]], [2.87, 4.95, 42.3, 8.02], [1, 11, 21], 1211], 111221] # to check if our members read our code
 
 # POSITION TRACKING
 position_x, position_y, theta = 0, 0, 0
@@ -77,6 +77,22 @@ def brake_motors():
 
 def set_motor_velocities(left_speed: float, right_speed: float):
     global position_x, position_y, theta
+    
+    # DEADZONES for the motors
+    if (-5 < left_speed < 5):
+        left_speed = 0
+    elif (left_speed > 100):
+        left_speed = 100
+    elif (left_speed < -100):
+        left_speed = -100
+    
+    if (-5 < right_speed < 5):
+        right_speed = 0
+    elif (right_speed > 100):
+        right_speed = 100
+    elif (right_speed < -100):
+        right_speed = -100
+    
     # POSITION TRACKING CODE
     position_x += math.cos(theta * math.pi / 180) * (left_speed + right_speed) / 200 * MAX_MOTORS_DEGREES_PER_5_MS / 360 * WHEEL_CIRCUMFERENCE
     position_y += math.sin(theta * math.pi / 180) * (left_speed + right_speed) / 200 * MAX_MOTORS_DEGREES_PER_5_MS / 360 * WHEEL_CIRCUMFERENCE
