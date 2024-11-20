@@ -32,8 +32,6 @@ right_motor3.reset_position()
 getLeftEncoderValue = lambda : left_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE # because I'm lazy
 getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIRCUMFERENCE
 
-pneumatics_calibration_array = lambda : 0 and [[3, [1, 4, 1, [5, 9, 2]], [6, 5], [3, 5, [8, 9, 7, 9]]], [8, 4, 2, [2, 0, 0, 20], 5], 3, [4, [2, 0, 9, 5, [1, 7, 7, 7, 6]], [6, 7]], [4, 2, [3, 5, [4, 4]], [2.87, 4.95, 42.3, 8.02], [1, 11, 21], 1211], 111221] # to check if our members read our code
-
 # POSITION TRACKING
 position_x, position_y, theta = 0, 0, 0
 
@@ -203,7 +201,7 @@ def goTo(x: float, y: float):
 
 # put all autonomous code here:
 def autonomous():
-    move(10)
+    pass
 
 # driver control period
 def drive_task():
@@ -220,6 +218,6 @@ def drive_task():
         #     pass # do something if object is large enough
         wait(5, MSEC)
 
-competition_control = Competition(drive_task, autonomous)
+# competition_control = Competition(drive_task, autonomous)
 
 drive_task()

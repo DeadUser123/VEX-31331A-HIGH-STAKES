@@ -6,11 +6,11 @@
 	"project": {
 		"name": "testProject",
 		"description": "",
-		"creationDate": "7/10/2024, 2:28:10 PM",
+		"creationDate": "Wed, 20 Nov 2024 01:22:40 GMT",
 		"platform": "V5",
 		"language": "python",
 		"slot": 1,
-		"sdkVersion": "V5_1_0_1_19",
+		"sdkVersion": "V5_1_0_1_25",
 		"python": {
 			"main": "src/main.py"
 		}
