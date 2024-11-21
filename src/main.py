@@ -1,6 +1,7 @@
 # Library imports
 from vex import *
 import math
+# Documentation - https://api.vex.com/v5/home/python/index.html
 
 # CONSTANTS - ALL DISTANCES ARE IN INCHES - SUBJECT TO CHANGE
 WHEEL_CIRCUMFERENCE = math.pi * 4
@@ -23,7 +24,7 @@ right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
 
 intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
 
-clamp = Pneumatics(brain.three_wire_port.a)
+clamp = DigitalOut(brain.three_wire_port.c)
 
 # backpack_lift_thingy = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
 left_motor3.reset_position()
@@ -54,7 +55,6 @@ Kp, Ki, Kd = 1.0, 0, 0
 #     3.0,      # sigrange (Range of values to consider as part of the signature / tolerance)
 #     0         # sigtype (Type: 0 = Normal, 1 = Advanced)
 # )
-
 
 # Functions
 def spin_motors():
@@ -122,10 +122,7 @@ def run_intake(forward: bool, reverse: bool):
     intake_motor.spin(FORWARD)
 
 def toggle_clamp(): # extends clamp pistons if not extended and vice versa
-    if clamp.value() == 0:
-        clamp.open()
-    else:
-        clamp.close()
+    clamp.set(not clamp.value())
 
 def move(distance: float):  # forward is positive, distance in inches
     global integral
