@@ -6,7 +6,7 @@ import math
 # CONSTANTS - ALL DISTANCES ARE IN INCHES - SUBJECT TO CHANGE
 WHEEL_CIRCUMFERENCE = math.pi * 4
 TURNING_DIAMETER = 10
-TURNING_DISTANCE = 2 * TURNING_DIAMETER * math.pi # in inches
+TURNING_DISTANCE = TURNING_DIAMETER * math.pi # in inches
 MAX_MOTORS_DEGREES_PER_5_MS = 200 / 60 / 1000 * 5 / 360 # the maximum number of degrees a v5 motor with 200 rpm can rotate every 5 milliseconds
 
 # Brain should be defined by default
@@ -198,16 +198,16 @@ def goTo(x: float, y: float):
 
 # put all autonomous code here:
 def autonomous():
-    pass
+    move(4)
 
 # driver control period
 def drive_task():
     controller.buttonR1.pressed(toggle_clamp)
     
     while True:
-        set_motor_velocities(controller.axis3.position() - controller.axis1.position(), controller.axis3.position() + controller.axis1.position())
+        set_motor_velocities(controller.axis3.position() - controller.axis4.position(), controller.axis3.position() + controller.axis4.position())
     
-        run_intake(controller.buttonR2.pressing(), controller.buttonL2.pressing())
+        run_intake(controller.buttonL2.pressing(), controller.buttonR2.pressing())
     
         # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK, mayhaps steal from the internet
         # object = visionSensor.largest_object()
@@ -216,5 +216,6 @@ def drive_task():
         wait(5, MSEC)
 
 # competition_control = Competition(drive_task, autonomous)
+autonomous()
 
 drive_task()
