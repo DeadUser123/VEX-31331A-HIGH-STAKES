@@ -198,6 +198,8 @@ def goTo(x: float, y: float):
 
 # put all autonomous code here:
 def autonomous():
+    left_motor3.reset_position()
+    right_motor3.reset_position()
     move(4)
 
 # driver control period
@@ -205,7 +207,7 @@ def drive_task():
     controller.buttonR1.pressed(toggle_clamp)
     
     while True:
-        set_motor_velocities(controller.axis3.position() - controller.axis4.position(), controller.axis3.position() + controller.axis4.position())
+        set_motor_velocities(0.9 * (controller.axis3.position() - controller.axis4.position()), 0.9 * (controller.axis3.position() + controller.axis4.position()))
     
         run_intake(controller.buttonL2.pressing(), controller.buttonR2.pressing())
     
