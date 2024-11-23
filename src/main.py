@@ -4,10 +4,14 @@ import math
 # Documentation - https://api.vex.com/v5/home/python/index.html
 
 # CONSTANTS - ALL DISTANCES ARE IN INCHES - SUBJECT TO CHANGE
-WHEEL_CIRCUMFERENCE = math.pi * 4
+WHEEL_CIRCUMFERENCE = math.pi * 3.25
 TURNING_DIAMETER = 10
 TURNING_DISTANCE = TURNING_DIAMETER * math.pi # in inches
 MAX_MOTORS_DEGREES_PER_5_MS = 200 / 60 / 1000 * 5 / 360 # the maximum number of degrees a v5 motor with 200 rpm can rotate every 5 milliseconds
+
+# DRIVER PREFERENCES
+FORWARD_MULTIPLIER = 0.6
+TURNING_MULTIPLIER = 0.45
 
 # Brain should be defined by default
 brain = Brain()
@@ -37,7 +41,7 @@ getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIR
 position_x, position_y, theta = 0, 0, 0
 
 # PID CONSTANT TERMS
-Kp, Ki, Kd = 1.0, 0, 0
+Kp, Ki, Kd = 0.5, 0.05, 0
 
 # VISION
 # visionSensor = Vision(Ports.PORT10)
@@ -125,7 +129,6 @@ def toggle_clamp(): # extends clamp pistons if not extended and vice versa
     clamp.set(not clamp.value())
 
 def move(distance: float):  # forward is positive, distance in inches
-    global integral
     global position_x, position_y
     
     startingPosition = getLeftEncoderValue()
@@ -149,8 +152,8 @@ def move(distance: float):  # forward is positive, distance in inches
         kD = Kd * (error - previous_error) / 0.005 # change in error divided by change in time
 
         # Calculate motor speeds
-        left_speed = kP + kI + kD
-        right_speed = kP + kI + kD
+        left_speed = (kP + kI + kD) * 100 # since its in percent
+        right_speed = (kP + kI + kD) * 100
 
         set_motor_velocities(left_speed, right_speed)
         
@@ -196,18 +199,25 @@ def goTo(x: float, y: float):
     rotate(degrees_to_turn)
     move(math.sqrt((y - position_y) ** 2 + (x - position_x) ** 2))
 
-# put all autonomous code here:
-def autonomous():
+def pre_auton():
     left_motor3.reset_position()
     right_motor3.reset_position()
-    move(4)
+
+# put all autonomous code here:
+def autonomous():
+    clamp.set(True)
+    set_motor_velocities(40, 40)
+    wait(2, SECONDS)
+    set_motor_velocities(0, 0)
+    brake_motors()
+    clamp.set(False)
 
 # driver control period
 def drive_task():
     controller.buttonR1.pressed(toggle_clamp)
     
     while True:
-        set_motor_velocities(0.9 * (-1 * controller.axis3.position() - controller.axis4.position()), 0.9 * (-1 * controller.axis3.position() + controller.axis4.position()))
+        set_motor_velocities(FORWARD_MULTIPLIER * -1 * controller.axis3.position() - TURNING_MULTIPLIER *  controller.axis4.position(), FORWARD_MULTIPLIER * -1 * controller.axis3.position() + TURNING_MULTIPLIER *  controller.axis4.position())
     
         run_intake(controller.buttonL2.pressing(), controller.buttonR2.pressing())
     
@@ -217,7 +227,9 @@ def drive_task():
         #     pass # do something if object is large enough
         wait(5, MSEC)
 
-# competition_control = Competition(drive_task, autonomous)
-autonomous()
+competition = Competition(drive_task, autonomous)
 
-drive_task()
+pre_auton()
+
+# autonomous()
+# drive_task()
