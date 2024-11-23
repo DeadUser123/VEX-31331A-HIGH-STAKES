@@ -207,7 +207,7 @@ def drive_task():
     controller.buttonR1.pressed(toggle_clamp)
     
     while True:
-        set_motor_velocities(0.9 * (controller.axis3.position() - controller.axis4.position()), 0.9 * (controller.axis3.position() + controller.axis4.position()))
+        set_motor_velocities(0.9 * (-1 * controller.axis3.position() - controller.axis4.position()), 0.9 * (-1 * controller.axis3.position() + controller.axis4.position()))
     
         run_intake(controller.buttonL2.pressing(), controller.buttonR2.pressing())
     
