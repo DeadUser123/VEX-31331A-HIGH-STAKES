@@ -104,12 +104,12 @@ def set_motor_velocities(left_speed: float, right_speed: float):
         theta += ((left_speed / 100 * MAX_MOTORS_DEGREES_PER_5_MS) * WHEEL_CIRCUMFERENCE) / TURNING_DISTANCE * 360
         theta %= 360
     
-    left_motor1.set_velocity(left_speed, PERCENT)
-    left_motor2.set_velocity(left_speed, PERCENT)
-    left_motor3.set_velocity(left_speed, PERCENT)
-    right_motor1.set_velocity(right_speed, PERCENT)
-    right_motor2.set_velocity(right_speed, PERCENT)
-    right_motor3.set_velocity(right_speed, PERCENT)
+    left_motor1.set_velocity(left_speed, VelocityUnits.PERCENT)
+    left_motor2.set_velocity(left_speed, VelocityUnits.PERCENT)
+    left_motor3.set_velocity(left_speed, VelocityUnits.PERCENT)
+    right_motor1.set_velocity(right_speed, VelocityUnits.PERCENT)
+    right_motor2.set_velocity(right_speed, VelocityUnits.PERCENT)
+    right_motor3.set_velocity(right_speed, VelocityUnits.PERCENT)
     
     if left_speed == 0 and right_speed == 0:
         brake_motors()
@@ -118,11 +118,11 @@ def set_motor_velocities(left_speed: float, right_speed: float):
     
 def run_intake(forward: bool, reverse: bool):
     if (forward): # one direction
-        intake_motor.set_velocity(100, PERCENT)
+        intake_motor.set_velocity(100, VelocityUnits.PERCENT)
     elif (reverse): # the other
-        intake_motor.set_velocity(-100, PERCENT)
+        intake_motor.set_velocity(-100, VelocityUnits.PERCENT)
     else:
-        intake_motor.set_velocity(0, PERCENT)
+        intake_motor.set_velocity(0, VelocityUnits.PERCENT)
     intake_motor.spin(FORWARD)
 
 def toggle_clamp(): # extends clamp pistons if not extended and vice versa
