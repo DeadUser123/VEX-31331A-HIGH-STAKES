@@ -22,11 +22,13 @@ controller = Controller(PRIMARY)
 left_motor1 = Motor(Ports.PORT1, GearSetting.RATIO_18_1, True) # left top
 left_motor2 = Motor(Ports.PORT2, GearSetting.RATIO_18_1, False)
 left_motor3 = Motor(Ports.PORT3, GearSetting.RATIO_18_1, False)
-right_motor1 = Motor(Ports.PORT4, GearSetting.RATIO_18_1, False) # right top
-right_motor2 = Motor(Ports.PORT5, GearSetting.RATIO_18_1, True)
-right_motor3 = Motor(Ports.PORT6, GearSetting.RATIO_18_1, True)
+right_motor1 = Motor(Ports.PORT10, GearSetting.RATIO_18_1, False) # right top
+right_motor2 = Motor(Ports.PORT9, GearSetting.RATIO_18_1, True)
+right_motor3 = Motor(Ports.PORT8, GearSetting.RATIO_18_1, True)
 
-intake_motor = Motor(Ports.PORT14, GearSetting.RATIO_18_1, True)
+intake_motor = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
+
+climb_motor = Motor(Ports.PORT19, GearSetting.RATIO_18_1, False)
 
 clamp = DigitalOut(brain.three_wire_port.c)
 
@@ -124,6 +126,16 @@ def run_intake(forward: bool, reverse: bool):
     else:
         intake_motor.set_velocity(0, VelocityUnits.PERCENT)
     intake_motor.spin(FORWARD)
+    
+def run_climb(speed: float):
+    if abs(speed) <= 5:
+        speed = 0
+        climb_motor.stop(BRAKE)
+    elif speed > 100:
+        speed = 100
+    elif speed < -100:
+        speed = -100
+    climb_motor.set_velocity(speed, VelocityUnits.PERCENT)
 
 def toggle_clamp(): # extends clamp pistons if not extended and vice versa
     clamp.set(not clamp.value())
@@ -205,12 +217,7 @@ def pre_auton():
 
 # put all autonomous code here:
 def autonomous():
-    clamp.set(True)
-    set_motor_velocities(40, 40)
-    wait(2, SECONDS)
-    set_motor_velocities(0, 0)
-    brake_motors()
-    clamp.set(False)
+    move(10)
 
 # driver control period
 def drive_task():
@@ -220,6 +227,8 @@ def drive_task():
         set_motor_velocities(FORWARD_MULTIPLIER * -1 * controller.axis3.position() - TURNING_MULTIPLIER *  controller.axis4.position(), FORWARD_MULTIPLIER * -1 * controller.axis3.position() + TURNING_MULTIPLIER *  controller.axis4.position())
     
         run_intake(controller.buttonL2.pressing(), controller.buttonR2.pressing())
+        
+        run_climb(controller.axis2.position())
     
         # objects = visionSensor.take_snapshot(SIGNATURE_RED) # SHOULD CHECK, mayhaps steal from the internet
         # object = visionSensor.largest_object()
@@ -231,5 +240,5 @@ competition = Competition(drive_task, autonomous)
 
 pre_auton()
 
-# autonomous()
-# drive_task()
+autonomous()
+drive_task()
