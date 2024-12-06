@@ -19,12 +19,12 @@ brain = Brain()
 # Robot configuration code
 controller = Controller(PRIMARY)
 
-left_motor1 = Motor(Ports.PORT1, GearSetting.RATIO_18_1, True) # left top
-left_motor2 = Motor(Ports.PORT2, GearSetting.RATIO_18_1, False)
-left_motor3 = Motor(Ports.PORT3, GearSetting.RATIO_18_1, False)
-right_motor1 = Motor(Ports.PORT10, GearSetting.RATIO_18_1, False) # right top
-right_motor2 = Motor(Ports.PORT9, GearSetting.RATIO_18_1, True)
-right_motor3 = Motor(Ports.PORT8, GearSetting.RATIO_18_1, True)
+left_motor1 = Motor(Ports.PORT1, GearSetting.RATIO_18_1, False) # left top
+left_motor2 = Motor(Ports.PORT2, GearSetting.RATIO_18_1, True)
+left_motor3 = Motor(Ports.PORT3, GearSetting.RATIO_18_1, True)
+right_motor1 = Motor(Ports.PORT10, GearSetting.RATIO_18_1, True) # right top
+right_motor2 = Motor(Ports.PORT9, GearSetting.RATIO_18_1, False)
+right_motor3 = Motor(Ports.PORT8, GearSetting.RATIO_18_1, False)
 
 intake_motor = Motor(Ports.PORT20, GearSetting.RATIO_18_1, True)
 
@@ -43,7 +43,7 @@ getRightEncoderValue = lambda : right_motor3.position(DEGREES) / 360 * WHEEL_CIR
 position_x, position_y, theta = 0, 0, 0
 
 # PID CONSTANT TERMS
-Kp, Ki, Kd = 0.5, 0.05, 0
+Kp, Ki, Kd = 0.5, 0, 0
 
 # VISION
 # visionSensor = Vision(Ports.PORT10)
@@ -120,28 +120,31 @@ def set_motor_velocities(left_speed: float, right_speed: float):
     
 def run_intake(forward: bool, reverse: bool):
     if (forward): # one direction
-        intake_motor.set_velocity(100, VelocityUnits.PERCENT)
+        intake_motor.set_velocity(200, VelocityUnits.RPM)
     elif (reverse): # the other
-        intake_motor.set_velocity(-100, VelocityUnits.PERCENT)
+        intake_motor.set_velocity(-200, VelocityUnits.RPM)
     else:
-        intake_motor.set_velocity(0, VelocityUnits.PERCENT)
+        intake_motor.set_velocity(0, VelocityUnits.RPM)
     intake_motor.spin(FORWARD)
     
 def run_climb(speed: float):
     if abs(speed) <= 5:
         speed = 0
         climb_motor.stop(BRAKE)
+        return
     elif speed > 100:
         speed = 100
     elif speed < -100:
         speed = -100
     climb_motor.set_velocity(speed, VelocityUnits.PERCENT)
+    climb_motor.spin(FORWARD)
 
 def toggle_clamp(): # extends clamp pistons if not extended and vice versa
     clamp.set(not clamp.value())
 
 def move(distance: float):  # forward is positive, distance in inches
     global position_x, position_y
+    distance /= 1.4
     
     startingPosition = getLeftEncoderValue()
     targetPosition = startingPosition + distance
@@ -217,14 +220,15 @@ def pre_auton():
 
 # put all autonomous code here:
 def autonomous():
-    move(10)
+    # move(23)
+    clamp.set(True)
 
 # driver control period
 def drive_task():
     controller.buttonR1.pressed(toggle_clamp)
     
     while True:
-        set_motor_velocities(FORWARD_MULTIPLIER * -1 * controller.axis3.position() - TURNING_MULTIPLIER *  controller.axis4.position(), FORWARD_MULTIPLIER * -1 * controller.axis3.position() + TURNING_MULTIPLIER *  controller.axis4.position())
+        set_motor_velocities(FORWARD_MULTIPLIER * -1 * controller.axis3.position() - TURNING_MULTIPLIER * controller.axis4.position(), FORWARD_MULTIPLIER * -1 * controller.axis3.position() + TURNING_MULTIPLIER *  controller.axis4.position())
     
         run_intake(controller.buttonL2.pressing(), controller.buttonR2.pressing())
         
@@ -240,5 +244,5 @@ competition = Competition(drive_task, autonomous)
 
 pre_auton()
 
-autonomous()
-drive_task()
+# autonomous()
+# drive_task()
