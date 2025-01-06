@@ -5,7 +5,7 @@
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 pros::Motor intake(-10, pros::MotorGearset::green);
-pros::Motor climb(9, pros::MotorGearset::green);
+// pros::Motor climb(9, pros::MotorGearset::green);
 
 pros::adi::DigitalOut clamp('D');
 bool clamp_state = false;
@@ -136,7 +136,7 @@ void opcontrol() {
 			toggle_clamp();
 		}
 
-		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+		if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)) {
 			intake.move(127);
 		} else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
 			intake.move(-127);
