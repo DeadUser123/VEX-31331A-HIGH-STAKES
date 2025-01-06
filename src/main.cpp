@@ -4,15 +4,15 @@
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
-pros::Motor intake(-20, pros::MotorGearset::green);
-pros::Motor climb(19, pros::MotorGearset::green);
+pros::Motor intake(-10, pros::MotorGearset::green);
+pros::Motor climb(9, pros::MotorGearset::green);
 
-pros::adi::DigitalOut clamp('C');
+pros::adi::DigitalOut clamp('D');
 bool clamp_state = false;
 
 // motor groups
-pros::MotorGroup leftMotors({1, -2, -3}, pros::MotorGearset::green); // left motor group - ports 3 (reversed), 4, 5 (reversed)
-pros::MotorGroup rightMotors({-10, 9, 8}, pros::MotorGearset::green); // right motor group - ports 6, 7, 9 (reversed)
+pros::MotorGroup leftMotors({20, -19, -18}, pros::MotorGearset::green);
+pros::MotorGroup rightMotors({-11, 13, 12}, pros::MotorGearset::green);
 
 lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 10, lemlib::Omniwheel::NEW_325, 200, 0);
 
@@ -130,7 +130,7 @@ void opcontrol() {
         int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
         // move the robot
-        chassis.tank(leftY, rightY);
+        chassis.tank(0.6 * leftY, 0.6 * rightY);
 
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)) {
 			toggle_clamp();
@@ -144,7 +144,7 @@ void opcontrol() {
 			intake.move(0);
 		}
 
-		climb.move(controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X));
+		// climb.move(controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X));
 
         // delay to save resources
         pros::delay(25);
