@@ -3,7 +3,6 @@
 #include "lemlib/asset.hpp"
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/misc.h"
-#include "pros/motors.h"
 
 std::string auton = "test"; // skills, red left, red right, blue left, blue right
 // path loading
@@ -54,7 +53,7 @@ lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
                                               100, // small error range timeout, in milliseconds
                                               3, // large error range, in inches
                                               500, // large error range timeout, in milliseconds
-                                              1 // maximum acceleration (slew)
+                                              2 // maximum acceleration (slew)
 );
 
 // angular PID controller
@@ -148,8 +147,6 @@ void autonomous() {
     if (auton == "test") {
         chassis.setPose(0, 0, 0);
         chassis.moveToPoint(0, 48, 10000);
-        // chassis.tank(0, 0);
-        // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_BRAKE);
     } else if (auton == "skills") { // upload files onto path.jerryio.com for visualization
         chassis.setPose(-60.765, -0.705, 71.143);
         chassis.follow(Skills1_txt, 15, 5000);
