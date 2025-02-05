@@ -1,9 +1,11 @@
 #include "main.h"
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/asset.hpp"
+#include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/misc.h"
+#include "pros/motors.h"
 
-std::string auton = "skills"; // skills, red left, red right, blue left, blue right
+std::string auton = "test"; // skills, red left, red right, blue left, blue right
 // path loading
 ASSET(blueLeft1_txt);
 ASSET(blueLeft2_txt);
@@ -40,8 +42,7 @@ bool clamp_state = false;
 pros::MotorGroup leftMotors({20, -19, -18}, pros::MotorGearset::green);
 pros::MotorGroup rightMotors({-11, 13, 12}, pros::MotorGearset::green);
 
-lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 10, lemlib::Omniwheel::NEW_325, 200, 0);
-
+lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 2);
 lemlib::OdomSensors sensors(nullptr, nullptr, nullptr, nullptr, nullptr);
 
 // lateral PID controller
@@ -53,19 +54,19 @@ lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
                                               100, // small error range timeout, in milliseconds
                                               3, // large error range, in inches
                                               500, // large error range timeout, in milliseconds
-                                              20 // maximum acceleration (slew)
+                                              1 // maximum acceleration (slew)
 );
 
 // angular PID controller
 lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
                                               0, // integral gain (kI)
-                                              10, // derivative gain (kD)
-                                              3, // anti windup
-                                              1, // small error range, in degrees
-                                              100, // small error range timeout, in milliseconds
-                                              3, // large error range, in degrees
-                                              500, // large error range timeout, in milliseconds
-                                              0 // maximum acceleration (slew)
+                                              0, // derivative gain (kD)
+                                              0, // anti windup
+                                              0, // small error range, in inches
+                                              0, // small error range timeout, in milliseconds
+                                              0, // large error range, in inches
+                                              0, // large error range timeout, in milliseconds
+                                              10 // maximum acceleration (slew)
 );
 
 lemlib::Chassis chassis(drivetrain, lateral_controller, angular_controller, sensors);
@@ -77,9 +78,9 @@ void toggle_clamp() {
 
 void run_intake(bool out, bool in) {
     if (out) {
-		intake.move(127);
+		intake.move(0.9 * 127);
 	} else if (in) {
-		intake.move(-127);
+		intake.move(0.9 * -127);
 	} else {
 		intake.move(0);
 	}
@@ -110,7 +111,7 @@ void on_center_button() {
 void initialize() {
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "Hello PROS User!");
-
+    chassis.calibrate();
 	pros::lcd::register_btn1_cb(on_center_button);
 }
 
@@ -144,8 +145,13 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-    if (auton == "skills") { // upload files onto path.jerryio.com for visualization
+    if (auton == "test") {
         chassis.setPose(0, 0, 0);
+        chassis.moveToPoint(0, 48, 10000);
+        // chassis.tank(0, 0);
+        // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_BRAKE);
+    } else if (auton == "skills") { // upload files onto path.jerryio.com for visualization
+        chassis.setPose(-60.765, -0.705, 71.143);
         chassis.follow(Skills1_txt, 15, 5000);
         toggle_clamp();
         run_intake(false, true);
@@ -232,7 +238,7 @@ void opcontrol() {
         int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
         // move the robot
-        chassis.tank(0.6 * leftY, 0.6 * rightY);
+        chassis.tank(0.8 * leftY, 0.8 * rightY);
 
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)) {
 			toggle_clamp();
