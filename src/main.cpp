@@ -38,22 +38,23 @@ pros::adi::DigitalOut clamp('D');
 bool clamp_state = false;
 
 // motor groups
-pros::MotorGroup leftMotors({20, -19, -18}, pros::MotorGearset::green);
-pros::MotorGroup rightMotors({-11, 13, 12}, pros::MotorGearset::green);
+pros::MotorGroup rightMotors({-20, 19, 18}, pros::MotorGearset::green);
+pros::MotorGroup leftMotors({11, -13, -12}, pros::MotorGearset::green);
 
+// dimensions: width 12.75, length 15.5
 lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 2);
 lemlib::OdomSensors sensors(nullptr, nullptr, nullptr, nullptr, nullptr);
 
 // lateral PID controller
 lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
                                               0, // integral gain (kI)
-                                              3, // derivative gain (kD)
-                                              3, // anti windup
+                                              5, // derivative gain (kD)
+                                              0, // anti windup
                                               1, // small error range, in inches
                                               100, // small error range timeout, in milliseconds
-                                              3, // large error range, in inches
-                                              500, // large error range timeout, in milliseconds
-                                              2 // maximum acceleration (slew)
+                                              0, // large error range, in inches
+                                              0, // large error range timeout, in milliseconds
+                                              0.4 // maximum acceleration (slew)
 );
 
 // angular PID controller
@@ -146,7 +147,7 @@ void competition_initialize() {}
 void autonomous() {
     if (auton == "test") {
         chassis.setPose(0, 0, 0);
-        chassis.moveToPoint(0, 48, 10000);
+        chassis.turnToHeading(90, 150000);
     } else if (auton == "skills") { // upload files onto path.jerryio.com for visualization
         chassis.setPose(-60.765, -0.705, 71.143);
         chassis.follow(Skills1_txt, 15, 5000);
@@ -235,7 +236,7 @@ void opcontrol() {
         int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
         // move the robot
-        chassis.tank(0.8 * leftY, 0.8 * rightY);
+        chassis.tank(-0.8 * rightY, -0.8 * leftY);
 
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)) {
 			toggle_clamp();
