@@ -4,7 +4,7 @@
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/misc.h"
 
-std::string auton = "test"; // skills, red left, red right, blue left, blue right
+int current_auton = 1; // skills, red left, red right, blue left, blue right
 // path loading
 ASSET(blueLeft1_txt);
 ASSET(blueLeft2_txt);
@@ -31,7 +31,7 @@ ASSET(Skills10_txt);
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
-pros::Motor intake(-10, pros::MotorGearset::green);
+pros::Motor intake(-10, pros::MotorGearset::blue);
 // pros::Motor climb(9, pros::MotorGearset::green);
 
 pros::adi::DigitalOut clamp('D');
@@ -62,8 +62,8 @@ lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
                                               0, // integral gain (kI)
                                               0, // derivative gain (kD)
                                               0, // anti windup
-                                              0, // small error range, in inches
-                                              0, // small error range timeout, in milliseconds
+                                              0.1, // small error range, in inches
+                                              100, // small error range timeout, in milliseconds
                                               0, // large error range, in inches
                                               0, // large error range timeout, in milliseconds
                                               10 // maximum acceleration (slew)
@@ -111,8 +111,9 @@ void on_center_button() {
 void initialize() {
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "Hello PROS User!");
-    chassis.calibrate();
 	pros::lcd::register_btn1_cb(on_center_button);
+    chassis.calibrate();
+    current_auton = 1;
 }
 
 /**
@@ -145,14 +146,15 @@ void competition_initialize() {}
  * from where it left off.
  */
 void autonomous() {
-    if (auton == "test") {
+    if (current_auton == 0) {
         chassis.setPose(0, 0, 0);
         chassis.turnToHeading(90, 150000);
-    } else if (auton == "skills") { // upload files onto path.jerryio.com for visualization
-        chassis.setPose(-60.765, -0.705, 71.143);
+    } else if (current_auton == 1) { // upload files onto path.jerryio.com for visualization
+        chassis.setPose(-60.574, -0.13, 180);
         chassis.follow(Skills1_txt, 15, 5000);
         toggle_clamp();
         run_intake(false, true);
+        chassis.turnToHeading(300, 2000);
         chassis.follow(Skills2_txt, 15, 15000, false);
         toggle_clamp();
         run_intake(false, false);
@@ -180,7 +182,7 @@ void autonomous() {
         chassis.follow(Skills10_txt, 15, 5000);
         toggle_clamp();
         run_intake(false, false);
-    } else if (auton == "red left") {
+    } else if (current_auton == 2) {
         chassis.setPose(-58.467, 23.615, 86.917);
         chassis.follow(redLeft1_txt, 15, 5000);
         toggle_clamp();
@@ -188,7 +190,7 @@ void autonomous() {
         chassis.follow(redLeft2_txt, 15, 5000, false);
         run_intake(false, false);
         chassis.follow(redLeft3_txt, 15, 5000);
-    } else if (auton == "red right") {
+    } else if (current_auton == 3) {
         chassis.setPose(-63.515, -25.216, 89.147);
         chassis.follow(redRight1_txt, 15, 5000);
         toggle_clamp();
@@ -196,7 +198,7 @@ void autonomous() {
         chassis.follow(redRight2_txt, 15, 5000, false);
         run_intake(false, false);
         chassis.follow(redRight3_txt, 15, 5000);
-    } else if (auton == "blue left") {
+    } else if (current_auton == 4) {
         chassis.setPose(31.152, -28.28, 95.058);
         chassis.follow(blueLeft1_txt, 15, 5000);
         toggle_clamp();
@@ -204,7 +206,7 @@ void autonomous() {
         chassis.follow(blueLeft2_txt, 15, 5000, false);
         run_intake(false, false);
         chassis.follow(blueLeft3_txt, 15, 5000);
-    } else if (auton == "blue right") {
+    } else if (current_auton == 5) {
         chassis.setPose(58.467, 23.615, 86.915);
         chassis.follow(blueRight1_txt, 15, 5000);
         toggle_clamp();
