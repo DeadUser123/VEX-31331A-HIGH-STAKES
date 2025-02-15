@@ -151,11 +151,12 @@ void autonomous() {
         chassis.turnToHeading(90, 150000);
     } else if (current_auton == 1) { // upload files onto path.jerryio.com for visualization
         chassis.setPose(-60.574, -0.13, 180);
-        chassis.follow(Skills1_txt, 15, 5000);
+        chassis.follow(Skills1_txt, 2, 5000);
         toggle_clamp();
         run_intake(false, true);
+        pros::delay(1000);
         chassis.turnToHeading(300, 2000);
-        chassis.follow(Skills2_txt, 15, 15000, false);
+        chassis.follow(Skills2_txt, 1, 15000, false);
         toggle_clamp();
         run_intake(false, false);
         chassis.follow(Skills3_txt, 15, 5000);
