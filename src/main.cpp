@@ -3,8 +3,10 @@
 #include "lemlib/asset.hpp"
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/misc.h"
+#include "pros/rtos.hpp"
+#include <cstdlib>
 
-int current_auton = 1; // skills, red left, red right, blue left, blue right
+int current_auton = 0; // skills, red left, red right, blue left, blue right
 // path loading
 ASSET(blueLeft1_txt);
 ASSET(blueLeft2_txt);
@@ -28,11 +30,12 @@ ASSET(Skills7_txt);
 ASSET(Skills8_txt);
 ASSET(Skills9_txt);
 ASSET(Skills10_txt);
+ASSET(AltSkills_Txt);
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 pros::Motor intake(-10, pros::MotorGearset::blue);
-// pros::Motor climb(9, pros::MotorGearset::green);
+pros::Motor climb(9, pros::MotorGearset::green);
 
 pros::adi::DigitalOut clamp('D');
 bool clamp_state = false;
@@ -42,7 +45,7 @@ pros::MotorGroup rightMotors({-20, 19, 18}, pros::MotorGearset::green);
 pros::MotorGroup leftMotors({11, -13, -12}, pros::MotorGearset::green);
 
 // dimensions: width 12.75, length 15.5
-lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 2);
+lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 0);
 lemlib::OdomSensors sensors(nullptr, nullptr, nullptr, nullptr, nullptr);
 
 // lateral PID controller
@@ -76,10 +79,10 @@ void toggle_clamp() {
 	clamp_state = !clamp_state;
 }
 
-void run_intake(bool out, bool in) {
-    if (out) {
+void run_intake(bool a, bool b) {
+    if (a) {
 		intake.move(0.9 * 127);
-	} else if (in) {
+	} else if (b) {
 		intake.move(0.9 * -127);
 	} else {
 		intake.move(0);
@@ -113,7 +116,7 @@ void initialize() {
 	pros::lcd::set_text(1, "Hello PROS User!");
 	pros::lcd::register_btn1_cb(on_center_button);
     chassis.calibrate();
-    current_auton = 1;
+    // current_auton = 1;
 }
 
 /**
@@ -148,46 +151,61 @@ void competition_initialize() {}
 void autonomous() {
     if (current_auton == 0) {
         chassis.setPose(0, 0, 0);
-        chassis.turnToHeading(90, 150000);
+        toggle_clamp();
+        chassis.moveToPoint(0, 24, 5000);
+        chassis.waitUntilDone();
+        toggle_clamp();
+        run_intake(true, false);
     } else if (current_auton == 1) { // upload files onto path.jerryio.com for visualization
+        toggle_clamp();
         chassis.setPose(-60.574, -0.13, 90);
         chassis.follow(Skills1_txt, 2, 5000);
+        chassis.waitUntilDone();
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         pros::delay(1000);
         chassis.turnToHeading(300, 2000);
         chassis.follow(Skills2_txt, 1, 15000, false);
+        chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
         chassis.follow(Skills3_txt, 1, 5000);
+        chassis.waitUntilDone();
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         chassis.follow(Skills4_txt, 1, 15000, false);
+        chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
         chassis.follow(Skills5_txt, 1, 5000);
+        chassis.waitUntilDone();
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         chassis.follow(Skills6_txt, 1, 15000, false);
+        chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
         chassis.follow(Skills7_txt, 1, 5000);
+        chassis.waitUntilDone();
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         chassis.follow(Skills8_txt, 1, 15000, false);
+        chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
         chassis.follow(Skills9_txt, 1, 5000);
+        chassis.waitUntilDone();
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         chassis.follow(Skills10_txt, 1, 5000);
+        chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
     } else if (current_auton == 2) {
         chassis.setPose(-58.467, 23.615, 86.917);
         chassis.follow(redLeft1_txt, 1, 5000);
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         pros::delay(1000);
         chassis.follow(redLeft2_txt, 1, 5000, false);
         run_intake(false, false);
@@ -196,7 +214,7 @@ void autonomous() {
         chassis.setPose(-63.515, -25.216, 89.147);
         chassis.follow(redRight1_txt, 1, 5000);
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         chassis.follow(redRight2_txt, 1, 5000, false);
         run_intake(false, false);
         chassis.follow(redRight3_txt, 1, 5000);
@@ -204,7 +222,7 @@ void autonomous() {
         chassis.setPose(31.152, -28.28, 95.058);
         chassis.follow(blueLeft1_txt, 1, 5000);
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         chassis.follow(blueLeft2_txt, 1, 5000, false);
         run_intake(false, false);
         chassis.follow(blueLeft3_txt, 1, 5000);
@@ -212,7 +230,7 @@ void autonomous() {
         chassis.setPose(58.467, 23.615, 86.915);
         chassis.follow(blueRight1_txt, 1, 5000);
         toggle_clamp();
-        run_intake(false, true);
+        run_intake(true, false);
         chassis.follow(blueRight2_txt, 1, 5000, false);
         run_intake(false, false);
         chassis.follow(blueRight3_txt, 1, 5000);
@@ -236,19 +254,22 @@ void opcontrol() {
 	
 	while (true) {
         // get left y and right y positions
+        int leftX = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-        int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y);
 
         // move the robot
-        chassis.tank(-0.8 * rightY, -0.8 * leftY);
+        chassis.arcade(-0.7 * leftY, 0.5 * leftX);
 
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)) {
 			toggle_clamp();
 		}
+        
+		run_intake(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2), controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2));
 
-		run_intake(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2), controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2));
-
-		// climb.move(controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X));
+		climb.move(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X));
+        if (abs(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X)) < 0.05) {
+            climb.brake();
+        }
 
         // delay to save resources
         pros::delay(25);
