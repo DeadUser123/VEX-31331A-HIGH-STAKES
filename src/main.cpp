@@ -8,18 +8,18 @@
 
 std::string current_auton = "red+"; // skills, red left, red right, blue left, blue right
 // path loading
-ASSET(blueLeft1_txt);
-ASSET(blueLeft2_txt);
-ASSET(blueLeft3_txt);
-ASSET(blueRight1_txt);
-ASSET(blueRight2_txt);
-ASSET(blueRight3_txt);
-ASSET(redRight1_txt);
-ASSET(redRight2_txt);
-ASSET(redRight3_txt);
-ASSET(redLeft1_txt);
-ASSET(redLeft2_txt);
-ASSET(redLeft3_txt);
+// ASSET(blueLeft1_txt);
+// ASSET(blueLeft2_txt);
+// ASSET(blueLeft3_txt);
+// ASSET(blueRight1_txt);
+// ASSET(blueRight2_txt);
+// ASSET(blueRight3_txt);
+// ASSET(redRight1_txt);
+// ASSET(redRight2_txt);
+// ASSET(redRight3_txt);
+// ASSET(redLeft1_txt);
+// ASSET(redLeft2_txt);
+// ASSET(redLeft3_txt);
 ASSET(Skills1_txt);
 ASSET(Skills2_txt);
 ASSET(Skills3_txt);
@@ -35,12 +35,15 @@ ASSET(AltSkills_Txt);
 ASSET(redPos1_txt);
 ASSET(redPos2_txt);
 ASSET(redPos3_txt);
+
 ASSET(redNeg1_txt);
 ASSET(redNeg2_txt);
 ASSET(redNeg3_txt);
+
 ASSET(bluePos1_txt);
 ASSET(bluePos2_txt);
 ASSET(bluePos3_txt);
+
 ASSET(blueNeg1_txt);
 ASSET(blueNeg2_txt);
 ASSET(blueNeg3_txt);
@@ -57,8 +60,8 @@ bool clamp_state = false;
 pros::MotorGroup rightMotors({-20, 19, 18}, pros::MotorGearset::green);
 pros::MotorGroup leftMotors({11, -13, -12}, pros::MotorGearset::green);
 
-// dimensions: width 12.75, length 15.5
-lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 0);
+// dimensions: width 12.75, length 15.5 <-- Remeasure this from the middle of the middle wheels because that maye be a source of ERROR in the auton
+lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 8);
 lemlib::OdomSensors sensors(nullptr, nullptr, nullptr, nullptr, nullptr);
 
 // lateral PID controller
@@ -165,107 +168,107 @@ void autonomous() {
     if (current_auton == "test") {
         chassis.setPose(0, 0, 0);
         toggle_clamp();
-        chassis.moveToPoint(0, 24, 5000);
+        chassis.moveToPoint(0, 24, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
     } else if (current_auton == "skills") { // upload files onto path.jerryio.com for visualization
         toggle_clamp();
         chassis.setPose(-60.574, -0.13, 90);
-        chassis.follow(Skills1_txt, 2, 5000);
+        chassis.follow(Skills1_txt, 2, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
         pros::delay(1000);
         chassis.turnToHeading(300, 2000);
-        chassis.follow(Skills2_txt, 1, 15000, false);
+        chassis.follow(Skills2_txt, 1, 110000, false);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills3_txt, 1, 5000);
+        chassis.follow(Skills3_txt, 1, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills4_txt, 1, 15000, false);
+        chassis.follow(Skills4_txt, 1, 110000, false);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills5_txt, 1, 5000);
+        chassis.follow(Skills5_txt, 1, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills6_txt, 1, 15000, false);
+        chassis.follow(Skills6_txt, 1, 110000, false);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills7_txt, 1, 5000);
+        chassis.follow(Skills7_txt, 1, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills8_txt, 1, 15000, false);
+        chassis.follow(Skills8_txt, 1, 110000, false);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills9_txt, 1, 5000);
+        chassis.follow(Skills9_txt, 1, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills10_txt, 1, 5000);
+        chassis.follow(Skills10_txt, 1, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
     } else if (current_auton == "red+") {
         chassis.setPose(-58.467, -56.047, 90);
-        chassis.follow(redPos1_txt, 1, 15000);
+        chassis.follow(redPos1_txt, 1, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
-        chassis.turnToHeading(180, 500);
+        chassis.turnToHeading(180, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
-        chassis.turnToHeading(0, 500);
-        chassis.follow(redPos2_txt, 1, 15000);
+        chassis.turnToHeading(0, 1000);
+        chassis.follow(redPos2_txt, 1, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(redPos3_txt, 1, 15000, false);
+        chassis.follow(redPos3_txt, 1, 110000, false);
     } else if (current_auton == "red-") {
         chassis.setPose(-58.659, 41.807, 120);
-        chassis.follow(redNeg1_txt, 1, 5000);
+        chassis.follow(redNeg1_txt, 1, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.turnToHeading(240, 500);
-        chassis.follow(redNeg2_txt, 1, 5000, false);
+        chassis.turnToHeading(240, 1000);
+        chassis.follow(redNeg2_txt, 1, 10000, false);
         chassis.waitUntilDone();
         run_intake(false, false);
-        chassis.follow(redNeg3_txt, 1, 5000);
+        chassis.follow(redNeg3_txt, 1, 10000);
         chassis.waitUntilDone();
         run_intake(true, false);
     } else if (current_auton == "blue+") {
         chassis.setPose(58.467, -56.047, 90);
-        chassis.follow(bluePos1_txt, 1, 15000);
+        chassis.follow(bluePos1_txt, 1, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
-        chassis.turnToHeading(180, 500);
+        chassis.turnToHeading(180, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
-        chassis.turnToHeading(0, 500);
-        chassis.follow(bluePos2_txt, 1, 15000);
+        chassis.turnToHeading(0, 1000);
+        chassis.follow(bluePos2_txt, 1, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(bluePos3_txt, 1, 15000, false);
+        chassis.follow(bluePos3_txt, 1, 110000, false);
     } else if (current_auton == "blue-") {
         chassis.setPose(58.659, 41.807, 120);
-        chassis.follow(blueNeg1_txt, 1, 5000);
+        chassis.follow(blueNeg1_txt, 1, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.turnToHeading(120, 500);
-        chassis.follow(blueNeg2_txt, 1, 5000, false);
+        chassis.turnToHeading(120, 1000);
+        chassis.follow(blueNeg2_txt, 1, 10000, false);
         chassis.waitUntilDone();
         run_intake(false, false);
-        chassis.follow(blueNeg3_txt, 1, 5000);
+        chassis.follow(blueNeg3_txt, 1, 10000);
         chassis.waitUntilDone();
         run_intake(true, false);
     }
