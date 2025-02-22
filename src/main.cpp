@@ -51,14 +51,14 @@ ASSET(blueNeg3_txt);
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 pros::Motor intake(-10, pros::MotorGearset::blue);
-pros::Motor climb(9, pros::MotorGearset::green);
+pros::Motor climb(9, pros::MotorGearset::red);
 
 pros::adi::DigitalOut clamp('D');
 bool clamp_state = false;
 
 // motor groups
-pros::MotorGroup rightMotors({-20, 19, 18}, pros::MotorGearset::green);
-pros::MotorGroup leftMotors({11, -13, -12}, pros::MotorGearset::green);
+pros::MotorGroup rightMotors({-20, -19, 18}, pros::MotorGearset::green);
+pros::MotorGroup leftMotors({11, 13, -12}, pros::MotorGearset::green);
 
 // dimensions: width 12.75, length 15.5 <-- Remeasure this from the middle of the middle wheels because that maye be a source of ERROR in the auton
 lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 8);
