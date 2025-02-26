@@ -2,11 +2,15 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/asset.hpp"
 #include "lemlib/chassis/trackingWheel.hpp"
+#include "pros/imu.hpp"
 #include "pros/misc.h"
+#include "pros/motors.h"
+#include "pros/rotation.hpp"
 #include "pros/rtos.hpp"
+#include "pros/vision.hpp"
 #include <cstdlib>
 
-std::string current_auton = "red+"; // skills, red left, red right, blue left, blue right
+std::string current_auton = "skills"; // skills, red left, red right, blue left, blue right
 // path loading
 // ASSET(blueLeft1_txt);
 // ASSET(blueLeft2_txt);
@@ -30,7 +34,7 @@ ASSET(Skills7_txt);
 ASSET(Skills8_txt);
 ASSET(Skills9_txt);
 ASSET(Skills10_txt);
-ASSET(AltSkills_Txt);
+ASSET(AltSkills_txt);
 
 ASSET(redPos1_txt);
 ASSET(redPos2_txt);
@@ -51,18 +55,29 @@ ASSET(blueNeg3_txt);
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 pros::Motor intake(-10, pros::MotorGearset::blue);
-pros::Motor climb(9, pros::MotorGearset::red);
+pros::Motor climb(9, pros::MotorGearset::green);
 
 pros::adi::DigitalOut clamp('D');
 bool clamp_state = false;
 
 // motor groups
-pros::MotorGroup rightMotors({-20, -19, 18}, pros::MotorGearset::green);
-pros::MotorGroup leftMotors({11, 13, -12}, pros::MotorGearset::green);
+pros::MotorGroup rightMotors({20, 19, -18}, pros::MotorGearset::green);
+pros::MotorGroup leftMotors({-11, -13, 12}, pros::MotorGearset::green);
+
+pros::IMU imu(1);
+pros::Rotation horizontal_encoder(2);
+lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_275, 0.1);
+
+pros::Rotation climb_encoder(3);
+double climbProfileConveyorPos = -0.04 * 360 * 100;
+
+int lookahead = 6;
+
+// pros::Vision vision_sensor(0);
 
 // dimensions: width 12.75, length 15.5 <-- Remeasure this from the middle of the middle wheels because that maye be a source of ERROR in the auton
 lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 8);
-lemlib::OdomSensors sensors(nullptr, nullptr, nullptr, nullptr, nullptr);
+lemlib::OdomSensors sensors(nullptr, nullptr, &horizontal_tracking_wheel, nullptr, &imu);
 
 // lateral PID controller
 lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
@@ -77,7 +92,7 @@ lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
 );
 
 // angular PID controller
-lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
+lemlib::ControllerSettings angular_controller(1, // proportional gain (kP)
                                               0, // integral gain (kI)
                                               0, // derivative gain (kD)
                                               0, // anti windup
@@ -93,6 +108,44 @@ lemlib::Chassis chassis(drivetrain, lateral_controller, angular_controller, sens
 void toggle_clamp() {
 	clamp.set_value(!clamp_state);
 	clamp_state = !clamp_state;
+}
+
+void goToClimb() {
+    double climb_kP = 0.1, climb_kI = 0, climb_kD = 0;
+    double climb_integral = 0, climb_prev_error = 0;
+    int target_position = climbProfileConveyorPos;
+    while (true) {
+        // Get current position from encoder
+        int current_position = climb_encoder.get_position();
+        
+        // Calculate error
+        double climb_error = target_position - current_position;
+        
+        // Integral term (accumulate error over time)
+        climb_integral += climb_error;
+        
+        // Derivative term (rate of change of error)
+        double climb_derivative = climb_error - climb_prev_error;
+        climb_prev_error = climb_error;
+
+        // PID Output
+        double climb_power = (climb_kP * climb_error) + (climb_kI * climb_integral) + (climb_kD * climb_derivative);
+        
+        // Clamp power between -127 and 127
+        climb_power = std::clamp(climb_power, -127.0, 127.0);
+        
+        // Apply power to motor
+        climb.move(climb_power);
+
+        // Stop the loop when close to target
+        if (std::abs(climb_error) < 100) {
+            climb.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+            climb.brake();
+            break;
+        }
+
+        pros::delay(20); // Delay for stability
+    }
 }
 
 void run_intake(bool in, bool out) {
@@ -129,10 +182,10 @@ void on_center_button() {
  */
 void initialize() {
 	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
+	pros::lcd::set_text(1, "Intialized");
 	pros::lcd::register_btn1_cb(on_center_button);
+    climb_encoder.reset_position();
     chassis.calibrate();
-    // current_auton = 1;
 }
 
 /**
@@ -168,107 +221,131 @@ void autonomous() {
     if (current_auton == "test") {
         chassis.setPose(0, 0, 0);
         toggle_clamp();
-        chassis.moveToPoint(0, 24, 10000);
+        // chassis.moveToPoint(0, 24, 10000);
+        chassis.turnToHeading(90, 5000);
         chassis.waitUntilDone();
         toggle_clamp();
-        run_intake(true, false);
+        // run_intake(true, false);
     } else if (current_auton == "skills") { // upload files onto path.jerryio.com for visualization
         toggle_clamp();
         chassis.setPose(-60.574, -0.13, 90);
-        chassis.follow(Skills1_txt, 2, 10000);
+        chassis.follow(Skills1_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
         pros::delay(1000);
         chassis.turnToHeading(300, 2000);
-        chassis.follow(Skills2_txt, 1, 110000, false);
+        chassis.follow(Skills2_txt, lookahead, 110000, false);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(225, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills3_txt, 1, 10000);
+        pros::delay(500);
+        chassis.turnToHeading(0, 500);
+        chassis.follow(Skills3_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills4_txt, 1, 110000, false);
+        chassis.follow(Skills4_txt, lookahead, 110000, false);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(315, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills5_txt, 1, 10000);
+        pros::delay(500);
+        chassis.turnToHeading(135, 1000);
+        chassis.waitUntilDone();
+        chassis.follow(Skills5_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills6_txt, 1, 110000, false);
+        pros::delay(500);
+        chassis.follow(Skills6_txt, lookahead, 110000, false);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(45, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills7_txt, 1, 10000);
+        pros::delay(500);
+        chassis.turnToHeading(180, 1000);
+        chassis.waitUntilDone();
+        chassis.follow(Skills7_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills8_txt, 1, 110000, false);
+        chassis.follow(Skills8_txt, lookahead, 110000, false);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(125, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
-        chassis.follow(Skills9_txt, 1, 10000);
+        pros::delay(500);
+        chassis.turnToHeading(315, 1000);
+        chassis.waitUntilDone();
+        chassis.follow(Skills9_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(Skills10_txt, 1, 10000);
+        chassis.follow(Skills10_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(false, false);
     } else if (current_auton == "red+") {
-        chassis.setPose(-58.467, -56.047, 90);
-        chassis.follow(redPos1_txt, 1, 110000);
+        chassis.setPose(-59.042, -35.557, 90);
+        chassis.follow(redPos1_txt, lookahead, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
+        pros::delay(500);
         chassis.turnToHeading(180, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
+        pros::delay(500);
         chassis.turnToHeading(0, 1000);
-        chassis.follow(redPos2_txt, 1, 110000);
+        chassis.follow(redPos2_txt, lookahead, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
+        pros::delay(500);
         run_intake(true, false);
-        chassis.follow(redPos3_txt, 1, 110000, false);
+        chassis.follow(redPos3_txt, lookahead, 110000, false);
     } else if (current_auton == "red-") {
         chassis.setPose(-58.659, 41.807, 120);
-        chassis.follow(redNeg1_txt, 1, 10000);
+        chassis.follow(redNeg1_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
         chassis.turnToHeading(240, 1000);
-        chassis.follow(redNeg2_txt, 1, 10000, false);
+        chassis.follow(redNeg2_txt, lookahead, 10000, false);
         chassis.waitUntilDone();
         run_intake(false, false);
-        chassis.follow(redNeg3_txt, 1, 10000);
+        chassis.follow(redNeg3_txt, lookahead, 10000);
         chassis.waitUntilDone();
         run_intake(true, false);
     } else if (current_auton == "blue+") {
         chassis.setPose(58.467, -56.047, 90);
-        chassis.follow(bluePos1_txt, 1, 110000);
+        chassis.follow(bluePos1_txt, lookahead, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
         chassis.turnToHeading(180, 1000);
         chassis.waitUntilDone();
         toggle_clamp();
         chassis.turnToHeading(0, 1000);
-        chassis.follow(bluePos2_txt, 1, 110000);
+        chassis.follow(bluePos2_txt, lookahead, 110000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
-        chassis.follow(bluePos3_txt, 1, 110000, false);
+        chassis.follow(bluePos3_txt, lookahead, 110000, false);
     } else if (current_auton == "blue-") {
         chassis.setPose(58.659, 41.807, 120);
-        chassis.follow(blueNeg1_txt, 1, 10000);
+        chassis.follow(blueNeg1_txt, lookahead, 10000);
         chassis.waitUntilDone();
         toggle_clamp();
         run_intake(true, false);
         chassis.turnToHeading(120, 1000);
-        chassis.follow(blueNeg2_txt, 1, 10000, false);
+        chassis.follow(blueNeg2_txt, lookahead, 10000, false);
         chassis.waitUntilDone();
         run_intake(false, false);
-        chassis.follow(blueNeg3_txt, 1, 10000);
+        chassis.follow(blueNeg3_txt, lookahead, 10000);
         chassis.waitUntilDone();
         run_intake(true, false);
     }
@@ -287,6 +364,8 @@ void autonomous() {
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
+pros::Task* climbThread = nullptr;
+
 void opcontrol() {
 	
 	while (true) {
@@ -303,9 +382,27 @@ void opcontrol() {
         
 		run_intake(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2), controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2));
 
-		climb.move(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X));
-        if (abs(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X)) < 0.05) {
+        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
+            delete climbThread;
+            climbThread = nullptr;
+            climbThread = new pros::Task(goToClimb);
+        }
+
+        if ((climbThread != nullptr && climbThread->get_state() == pros::E_TASK_STATE_DELETED) || controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
+            delete climbThread; 
+            climbThread = nullptr;
+        }
+
+        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B)) {
+            climb_encoder.reset_position();
+        }
+
+		climb.move(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+        if (abs(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)) < 0.05) {
+            climb.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
             climb.brake();
+        } else {
+            climb.set_brake_mode(pros::E_MOTOR_BRAKE_COAST);
         }
 
         // delay to save resources
