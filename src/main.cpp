@@ -10,7 +10,7 @@
 #include "pros/vision.hpp"
 #include <cstdlib>
 
-std::string current_auton = "skills"; // skills, red left, red right, blue left, blue right
+std::string current_auton = "test"; // skills, red left, red right, blue left, blue right
 // path loading
 // ASSET(blueLeft1_txt);
 // ASSET(blueLeft2_txt);
@@ -71,24 +71,24 @@ lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omn
 pros::Rotation climb_encoder(3);
 double climbProfileConveyorPos = -0.04 * 360 * 100;
 
-int lookahead = 6;
+int lookahead = 4;
 
 // pros::Vision vision_sensor(0);
 
 // dimensions: width 12.75, length 15.5 <-- Remeasure this from the middle of the middle wheels because that maye be a source of ERROR in the auton
-lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 200.0 * 5 / 3, 8);
+lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwheel::NEW_325, 400, 8);
 lemlib::OdomSensors sensors(nullptr, nullptr, &horizontal_tracking_wheel, nullptr, &imu);
 
 // lateral PID controller
-lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
+lemlib::ControllerSettings lateral_controller(1, // proportional gain (kP)
                                               0, // integral gain (kI)
                                               5, // derivative gain (kD)
                                               0, // anti windup
                                               1, // small error range, in inches
                                               100, // small error range timeout, in milliseconds
                                               0, // large error range, in inches
-                                              0, // large error range timeout, in milliseconds
-                                              0.4 // maximum acceleration (slew)
+                                              500, // large error range timeout, in milliseconds
+                                              0.2 // maximum acceleration (slew)
 );
 
 // angular PID controller
@@ -186,6 +186,7 @@ void initialize() {
 	pros::lcd::register_btn1_cb(on_center_button);
     climb_encoder.reset_position();
     chassis.calibrate();
+    // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_HOLD);
 }
 
 /**
@@ -221,8 +222,8 @@ void autonomous() {
     if (current_auton == "test") {
         chassis.setPose(0, 0, 0);
         toggle_clamp();
-        // chassis.moveToPoint(0, 24, 10000);
-        chassis.turnToHeading(90, 5000);
+        chassis.moveToPoint(0, 48, 10000);
+        // chassis.turnToHeading(90, 5000);
         chassis.waitUntilDone();
         toggle_clamp();
         // run_intake(true, false);
