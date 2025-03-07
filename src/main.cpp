@@ -2,15 +2,16 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/asset.hpp"
 #include "lemlib/chassis/trackingWheel.hpp"
+#include "pros/adi.hpp"
 #include "pros/imu.hpp"
 #include "pros/misc.h"
 #include "pros/motors.h"
 #include "pros/rotation.hpp"
 #include "pros/rtos.hpp"
-#include "pros/vision.hpp"
+// #include "pros/vision.hpp"
 #include <cstdlib>
 
-std::string current_auton = "test"; // skills, red left, red right, blue left, blue right
+std::string current_auton = "skills"; // skills, red left, red right, blue left, blue right
 // path loading
 // ASSET(blueLeft1_txt);
 // ASSET(blueLeft2_txt);
@@ -52,6 +53,14 @@ ASSET(blueNeg1_txt);
 ASSET(blueNeg2_txt);
 ASSET(blueNeg3_txt);
 
+ASSET(altRedPos1_txt);
+ASSET(altRedPos2_txt);
+ASSET(altRedPos3_txt);
+
+ASSET(altBluePos1_txt);
+ASSET(altBluePos2_txt);
+ASSET(altBluePos3_txt);
+
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 
 pros::Motor intake(-10, pros::MotorGearset::blue);
@@ -59,6 +68,11 @@ pros::Motor climb(9, pros::MotorGearset::green);
 
 pros::adi::DigitalOut clamp('D');
 bool clamp_state = false;
+
+pros::adi::Button limitswitch('F');
+
+pros::adi::DigitalOut corner_clear('H');
+bool corner_clear_state = false;
 
 // motor groups
 pros::MotorGroup rightMotors({20, 19, -18}, pros::MotorGearset::green);
@@ -69,9 +83,9 @@ pros::Rotation horizontal_encoder(2);
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_275, 0.1);
 
 pros::Rotation climb_encoder(3);
-double climbProfileConveyorPos = -0.04 * 360 * 100;
+double climbProfileConveyorPos = -0.07 * 360 * 100;
 
-int lookahead = 4;
+double lookahead = 4;
 
 // pros::Vision vision_sensor(0);
 
@@ -80,7 +94,7 @@ lemlib::Drivetrain drivetrain(&leftMotors, &rightMotors, 12.75, lemlib::Omniwhee
 lemlib::OdomSensors sensors(nullptr, nullptr, &horizontal_tracking_wheel, nullptr, &imu);
 
 // lateral PID controller
-lemlib::ControllerSettings lateral_controller(1, // proportional gain (kP)
+lemlib::ControllerSettings lateral_controller(10, // proportional gain (kP)
                                               0, // integral gain (kI)
                                               5, // derivative gain (kD)
                                               0, // anti windup
@@ -88,7 +102,7 @@ lemlib::ControllerSettings lateral_controller(1, // proportional gain (kP)
                                               100, // small error range timeout, in milliseconds
                                               0, // large error range, in inches
                                               500, // large error range timeout, in milliseconds
-                                              0.2 // maximum acceleration (slew)
+                                              0.4 // maximum acceleration (slew)
 );
 
 // angular PID controller
@@ -108,6 +122,11 @@ lemlib::Chassis chassis(drivetrain, lateral_controller, angular_controller, sens
 void toggle_clamp() {
 	clamp.set_value(!clamp_state);
 	clamp_state = !clamp_state;
+}
+
+void toggle_corner_clear() {
+    corner_clear.set_value(!corner_clear_state);
+    corner_clear_state = !corner_clear_state;
 }
 
 void goToClimb() {
@@ -186,6 +205,7 @@ void initialize() {
 	pros::lcd::register_btn1_cb(on_center_button);
     climb_encoder.reset_position();
     chassis.calibrate();
+    toggle_corner_clear();
     // chassis.setBrakeMode(pros::E_MOTOR_BRAKE_HOLD);
 }
 
@@ -222,11 +242,11 @@ void autonomous() {
     if (current_auton == "test") {
         chassis.setPose(0, 0, 0);
         toggle_clamp();
-        chassis.moveToPoint(0, 48, 10000);
+        chassis.moveToPoint(0, 24, 10000);
         // chassis.turnToHeading(90, 5000);
         chassis.waitUntilDone();
         toggle_clamp();
-        // run_intake(true, false);
+        run_intake(true, false);
     } else if (current_auton == "skills") { // upload files onto path.jerryio.com for visualization
         toggle_clamp();
         chassis.setPose(-60.574, -0.13, 90);
@@ -310,18 +330,21 @@ void autonomous() {
         run_intake(true, false);
         chassis.follow(redPos3_txt, lookahead, 110000, false);
     } else if (current_auton == "red-") {
+        toggle_clamp();
         chassis.setPose(-58.659, 41.807, 120);
         chassis.follow(redNeg1_txt, lookahead, 10000);
         chassis.waitUntilDone();
+        pros::delay(500);
         toggle_clamp();
         run_intake(true, false);
         chassis.turnToHeading(240, 1000);
         chassis.follow(redNeg2_txt, lookahead, 10000, false);
         chassis.waitUntilDone();
+        chassis.turnToHeading(180, 1000);
         run_intake(false, false);
         chassis.follow(redNeg3_txt, lookahead, 10000);
         chassis.waitUntilDone();
-        run_intake(true, false);
+        // run_intake(true, false);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
     } else if (current_auton == "blue+") {
         chassis.setPose(58.467, -56.047, 90);
         chassis.follow(bluePos1_txt, lookahead, 110000);
@@ -337,18 +360,75 @@ void autonomous() {
         run_intake(true, false);
         chassis.follow(bluePos3_txt, lookahead, 110000, false);
     } else if (current_auton == "blue-") {
-        chassis.setPose(58.659, 41.807, 120);
+        toggle_clamp();
+        chassis.setPose(58.659, 41.807, 240);
         chassis.follow(blueNeg1_txt, lookahead, 10000);
         chassis.waitUntilDone();
+        pros::delay(500);
         toggle_clamp();
         run_intake(true, false);
         chassis.turnToHeading(120, 1000);
         chassis.follow(blueNeg2_txt, lookahead, 10000, false);
         chassis.waitUntilDone();
+        chassis.turnToHeading(180, 1000);
         run_intake(false, false);
         chassis.follow(blueNeg3_txt, lookahead, 10000);
         chassis.waitUntilDone();
+        // run_intake(true, false);
+    } else if (current_auton == "altRed+") {
+        toggle_clamp();
+        chassis.setPose(-58.659, -41.807, 60);
+        chassis.follow(altRedPos1_txt, lookahead, 110000);
+        chassis.waitUntilDone();
+        toggle_clamp();
+        pros::delay(500);
+        chassis.turnToHeading(135, 500);
+        chassis.waitUntilDone();
         run_intake(true, false);
+        chassis.follow(altRedPos2_txt, lookahead, 110000, false);
+        chassis.waitUntilDone();
+        pros::delay(1000);
+        run_intake(false, false);
+        chassis.follow(altRedPos3_txt, lookahead, 110000);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(45, 500);
+        chassis.waitUntilDone();
+        toggle_corner_clear();
+        pros::delay(500);
+        chassis.turnToHeading(180, 500);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(270, 500);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(45, 500);
+        chassis.waitUntilDone();
+        toggle_corner_clear();
+    } else if (current_auton == "altBlue+") {
+        toggle_clamp();
+        chassis.setPose(58.659, -41.807, 300);
+        chassis.follow(altBluePos1_txt, lookahead, 110000);
+        chassis.waitUntilDone();
+        toggle_clamp();
+        pros::delay(500);
+        run_intake(true, false);
+        chassis.turnToHeading(45, 500);
+        chassis.waitUntilDone();
+        chassis.follow(altBluePos2_txt, lookahead, 110000, false);
+        chassis.waitUntilDone();
+        pros::delay(1000);
+        run_intake(false, false);
+        chassis.follow(altBluePos3_txt, lookahead, 110000);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(315, 500);
+        chassis.waitUntilDone();
+        toggle_corner_clear();
+        pros::delay(500);
+        chassis.turnToHeading(180, 500);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(90, 500);
+        chassis.waitUntilDone();
+        chassis.turnToHeading(315, 500);
+        chassis.waitUntilDone();
+        toggle_corner_clear();
     }
 }
 
@@ -375,12 +455,16 @@ void opcontrol() {
         int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
 
         // move the robot
-        chassis.arcade(-0.7 * leftY, 0.5 * leftX);
+        chassis.arcade(-0.97 * leftY, 0.5 * leftX);
 
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R1)) {
 			toggle_clamp();
 		}
         
+        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_UP)) {
+			toggle_corner_clear();
+		}
+
 		run_intake(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2), controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2));
 
         if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_A)) {
@@ -398,7 +482,7 @@ void opcontrol() {
             climb_encoder.reset_position();
         }
 
-		climb.move(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
+		climb.move(-1 * controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y));
         if (abs(controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_Y)) < 0.05) {
             climb.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
             climb.brake();

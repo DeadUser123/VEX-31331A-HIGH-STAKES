@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "testProject",
+    "project_name": "auton skills",
     "target": "v5",
     "templates": {
       "LemLib": {
@@ -299,7 +299,8 @@
     },
     "upload_options": {
       "description": "HIGH STAKES!!",
-      "icon": "pros"
+      "icon": "pros",
+      "slot": 6
     },
     "use_early_access": false
   }
